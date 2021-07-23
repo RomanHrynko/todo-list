@@ -1,24 +1,15 @@
 import React, { Component } from 'react';
 import Task from './Task.jsx';
 import CreateTaskInput from './CreateTaskInput.jsx';
-import { createTask, fetchTasksList, updateTask, deleteTask } from '../tasksGateway.js';
+import { createTask, updateTask, deleteTask } from '../tasksGateway.js';
+import { connect } from 'react-redux';
+import * as tasksActions from '../tasks.actions';
+import { tasksListSelector } from '../tasks.selectors';
 
 class TasksList extends Component {
-  state = {
-    tasks: [],
-  };
-
   componentDidMount() {
-    this.fetchTasks();
+    this.props.getTasksList();
   }
-
-  fetchTasks = () => {
-    fetchTasksList().then(tasksList =>
-      this.setState({
-        tasks: tasksList,
-      }),
-    );
-  };
 
   onCreate = text => {
     const newTask = {
@@ -26,25 +17,25 @@ class TasksList extends Component {
       done: false,
     };
 
-    createTask(newTask).then(() => this.fetchTasks());
+    createTask(newTask).then(() => this.props.getTasksList());
   };
 
   handleTaskStatusChange = id => {
-    const { done, text } = this.state.tasks.find(task => task.id === id);
+    const { done, text } = this.props.tasks.find(task => task.id === id);
     const updatedTask = {
       text,
       done: !done,
     };
 
-    updateTask(id, updatedTask).then(() => this.fetchTasks());
+    updateTask(id, updatedTask).then(() => this.props.getTasksList());
   };
 
   handleTaskDelete = id => {
-    deleteTask(id).then(() => this.fetchTasks());
+    deleteTask(id).then(() => this.props.getTasksList());
   };
 
   render() {
-    const sortedList = this.state.tasks.slice().sort((a, b) => a.done - b.done);
+    const sortedList = this.props.tasks.slice().sort((a, b) => a.done - b.done);
 
     return (
       <div className="todo-list">
@@ -64,4 +55,14 @@ class TasksList extends Component {
   }
 }
 
-export default TasksList;
+const mapState = state => {
+  return {
+    tasks: tasksListSelector(state),
+  };
+};
+
+const mapDispatch = {
+  getTasksList: tasksActions.getTasksList,
+};
+
+export default connect(mapState, mapDispatch)(TasksList);
